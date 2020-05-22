@@ -216,7 +216,7 @@ export class ChatEngine {
                         }));
                         break;
                     case "event":
-                        console.log(event);
+                        console.log("event", event);
                         break;
                 }
             });
