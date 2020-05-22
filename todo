@@ -8,3 +8,4 @@ reload extension command
 notification support (save indicator?)
 X manual enter password
 X 2fa
+allow multiple sources (e.g. slack)
