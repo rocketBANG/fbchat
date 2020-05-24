@@ -7,8 +7,11 @@ export class ChatThreadsProvider implements vscode.TreeDataProvider<ChatThreadIt
 
   constructor(private chatEngine: ChatEngine) {
     chatEngine.registerListener({
-      messageListener: () => {},
-      resetListener: () => this.refresh()
+      resetListener: (type) => {
+        if (type === "all" || type === "threads") {
+          this.refresh();
+        }
+      }
     });
   }
 

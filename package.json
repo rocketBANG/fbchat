@@ -44,6 +44,14 @@
         "title": "FBChat Unmute notifications"
       },
       {
+        "command": "fbchat.refresh",
+        "title": "FBChat Refresh (reload ext)"
+      },
+      {
+        "command": "fbchat.refreshThread",
+        "title": "Refresh Thread"
+      },
+      {
         "command": "fbchat.sendTextAsMessage",
         "title": "FBChat Send text as message"
       }
@@ -77,6 +85,11 @@
           "command": "fbchat.reply",
           "group": "navigation",
           "when": "resourceScheme == fbchat"
+        },
+        {
+          "command": "fbchat.refreshThread",
+          "group": "navigation",
+          "when": "resourceScheme == fbchat"
         }
       ],
       "editor/context": [
@@ -90,6 +103,10 @@
         {
           "command": "fbchat.reply",
           "when": "resourceScheme == fbchat"
+        },
+        {
+          "command": "fbchat.refreshThread",
+          "when": "false"
         }
       ]
     },

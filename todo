@@ -4,14 +4,17 @@ X Replying support
 X Sidebar
 X login state different from activated state
 X send code snippet in mesage
-notification support
-change mark as read to only mark when it is actually read
+X notification support
+X change mark as read to only mark when it is actually read
+X reload thread (support replying in a different place)
+X reload extension command
+X notifications for reply
 read receipt support
+Would be cool to represent more state in the document (like when reloading)
 clean up extension.ts
 number of unreads
 Image support
 Typing support
-reload extension command
 Error messages
 Reaction support
 Language support (styling)

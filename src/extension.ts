@@ -16,6 +16,24 @@ export function activate(context: vscode.ExtensionContext) {
     treeDataProvider: new ChatThreadsProvider(chatEngine)
   });
 
+  vscode.window.onDidChangeActiveTextEditor((editor) => {
+    if (!editor) {
+      return;
+    }
+
+    if (editor.document.uri.scheme !== 'fbchat') {
+      return;
+    }
+
+    const threadID = editor.document.uri.path;
+
+    if (!threadID || typeof threadID !== "string") {
+      return;
+    }
+    chatEngine.markAsRead(threadID);
+
+  });
+
   chatEngine.registerListener({
     messageListener: async (data) => {
       if (vscode.workspace.getConfiguration('fbchat').get('showNotifications') === false || isMuted === true) {
@@ -43,8 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand('fbchat.mute');
       }
 
-    },
-    resetListener: () => {}
+    }
   });
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
@@ -74,13 +91,14 @@ export function activate(context: vscode.ExtensionContext) {
     const selected = await vscode.window.showQuickPick(threadsPromise);
     if (selected) {
       let uri = vscode.Uri.parse('fbchat:' + selected.id);
+      await chatEngine.markAsRead(selected.id);
       let doc = await vscode.workspace.openTextDocument(uri); // calls back into the provider
       await vscode.window.showTextDocument(doc, { preview: false });
     }
   });
 
   let reply = vscode.commands.registerCommand('fbchat.reply', async (threadID?: string) => {
-    if (!threadID) {
+    if (!threadID || typeof threadID !== "string") {
       if (!vscode.window.activeTextEditor) {
         return; // no editor
       }
@@ -91,6 +109,8 @@ export function activate(context: vscode.ExtensionContext) {
 
       threadID = document.uri.path;
     }
+
+    chatEngine.markAsRead(threadID);
 
     const message = await vscode.window.showInputBox({
       prompt: "Enter a message"
@@ -151,6 +171,24 @@ export function activate(context: vscode.ExtensionContext) {
     isMuted = false;
   });
 
+  let refresh = vscode.commands.registerCommand('fbchat.refresh', async () => {
+    chatEngine.refreshAll();
+  });
+
+  let refreshThread = vscode.commands.registerCommand('fbchat.refreshThread', async () => {
+    if (!vscode.window.activeTextEditor) {
+      return; // no editor
+    }
+    let { document } = vscode.window.activeTextEditor;
+    if (document.uri.scheme !== 'fbchat') {
+      return; // not my scheme
+    }
+
+    const threadID = document.uri.path;
+
+    chatEngine.refreshThread(threadID);
+});
+
   let login = vscode.commands.registerCommand('fbchat.login', async () => {
     if (chatEngine.isActive() || chatEngine.isSavedLogin()) {
       return;
@@ -168,6 +206,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(openThread);
   context.subscriptions.push(mute);
   context.subscriptions.push(unmute);
+  context.subscriptions.push(refresh);
+  context.subscriptions.push(refreshThread);
 }
 
 // this method is called when your extension is deactivated

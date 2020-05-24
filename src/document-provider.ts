@@ -2,11 +2,19 @@ import * as vscode from 'vscode';
 import { ChatEngine } from './chat-engine';
 
 export class FBChatDocumentProvider implements vscode.TextDocumentContentProvider {
-  private chatLog: { [threadId: string]: string } = {};
+  private chatLog: { [threadId: string]: string | undefined } = {};
+  private openThreadIds: string[] = [];
+
+  private isResetting = false;
 
   constructor(private chatEngine: ChatEngine) {
     chatEngine.registerListener({
       messageListener: (data) => {
+        
+        if (this.chatLog[data.threadID] === undefined) {
+          return; 
+        }
+
         this.addMessage({
           message: data.body,
           senderName: this.chatEngine.isCurrentuser(data.senderID) ? 'You' : data.senderName,
@@ -14,8 +22,22 @@ export class FBChatDocumentProvider implements vscode.TextDocumentContentProvide
         });
         this.onDidChangeEmitter.fire(vscode.Uri.parse("fbchat:" + data.threadID));
       },
-      resetListener: () => {
-        this.chatLog = {};
+      resetListener: (type, threadID) => {
+        if (type === "all" || type === 'threads') {
+          this.chatLog = {};
+          const uniqueThreads = new Set(this.openThreadIds);
+          this.isResetting = true;
+          uniqueThreads.forEach(t => this.onDidChangeEmitter.fire(vscode.Uri.parse('fbchat:' + t)));
+          this.isResetting = false;
+          uniqueThreads.forEach(t => this.onDidChangeEmitter.fire(vscode.Uri.parse('fbchat:' + t)));
+        } 
+        else if (type === "thread" && threadID) {
+          this.chatLog[threadID] = undefined;
+          this.isResetting = true;
+          this.onDidChangeEmitter.fire(vscode.Uri.parse("fbchat:" + threadID));
+          this.isResetting = false;
+          this.onDidChangeEmitter.fire(vscode.Uri.parse("fbchat:" + threadID));
+        }
       }
     });
   }
@@ -29,6 +51,12 @@ export class FBChatDocumentProvider implements vscode.TextDocumentContentProvide
 
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
     const threadId = uri.path;
+
+    if (this.isResetting) {
+      return '';
+    }
+
+    this.openThreadIds.push(threadId);
 
     if (this.chatLog[threadId] === undefined) {
       this.chatLog[threadId] = '';
@@ -48,7 +76,7 @@ export class FBChatDocumentProvider implements vscode.TextDocumentContentProvide
       });
     }
 
-    return this.chatLog[threadId];
+    return this.chatLog[threadId] || '';
   }
 
   onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();

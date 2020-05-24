@@ -29,16 +29,20 @@ export interface ChatListenerData {
 }
 
 export type ChatListener = {
-  resetListener: () => void;
-  messageListener: (data: ChatListenerData) => void;
+  resetListener?: (type: RefreshType, threadID?: string) => void;
+  messageListener?: (data: ChatListenerData) => void;
 };
 
 const settingsKey = "fbchatAppState";
+
+export type RefreshType = 'all' | 'threads' | 'thread';
 
 export class ChatEngine {
   private api: any = undefined;
   private userInfo: { [userID: string]: any } = {};
   private messageRecievedListener: (() => void) | undefined = undefined;
+
+  private threadsMarkedAsRead: { [threadID: string]: boolean } = {};
 
   constructor(private state: vscode.Memento) {
   }
@@ -123,7 +127,7 @@ export class ChatEngine {
       this.messageRecievedListener();
     }
 
-    this.listeners.forEach(l => l.resetListener());
+    this.listeners.forEach(l => l.resetListener && l.resetListener('all', undefined));
 
     resolve();
   });
@@ -131,11 +135,15 @@ export class ChatEngine {
   isCurrentuser = (userID: string) => this.api.getCurrentUserID() === userID;
 
   sendMessage = async (message: string, threadID: string) => {
-    this.api.sendMessage(message, threadID);
+    this.api.sendMessage(message, threadID, (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
 
     const senderInfo = await this.getUserInfo(this.api.getCurrentUserID());
 
-    this.listeners.forEach(l => l.messageListener({
+    this.listeners.forEach(l => l.messageListener && l.messageListener({
       body: message,
       senderName: senderInfo.name,
       threadID: threadID,
@@ -193,8 +201,28 @@ export class ChatEngine {
     return (await this.getUserInfo(userID)).name;
   };
 
+  markAsRead = async (threadID: string) => new Promise((resolve) => {
+    if (this.threadsMarkedAsRead[threadID] === true) {
+      return;
+    }
+
+    this.api.markAsRead(threadID, (err) => {
+      if (err) { console.error(err); }
+      this.threadsMarkedAsRead[threadID] = true;
+      resolve();
+    });
+  });
+
+  refreshAll = () => {
+    this.listeners.forEach(l => l.resetListener && l.resetListener('all', undefined));
+  };
+
+  refreshThread = (threadID: string) => {
+    this.listeners.forEach(l => l.resetListener && l.resetListener('thread', threadID));
+  };
+
   private setupApiListening = (api) => new Promise(resolve => {
-    this.listeners.forEach(l => l.resetListener());
+    this.listeners.forEach(l => l.resetListener && l.resetListener('all'));
 
     api.setOptions({
       logLevel: "silent"
@@ -210,15 +238,14 @@ export class ChatEngine {
         return console.error(err);
       }
 
-      api.markAsRead(event.threadID, (err) => {
-        if (err) { console.error(err); }
-      });
+      this.threadsMarkedAsRead[event.threadID] = false;
 
       switch (event.type) {
         case "message":
+        case "message_reply":
           const senderInfo = await this.getUserInfo(event.senderID);
 
-          this.listeners.forEach(l => l.messageListener({
+          this.listeners.forEach(l => l.messageListener && l.messageListener({
             body: event.body,
             senderName: senderInfo.name,
             threadID: event.threadID,
@@ -227,7 +254,11 @@ export class ChatEngine {
           break;
         case "event":
           console.log("event", event);
+          this.markAsRead(event.threadID);
           break;
+        default: 
+          this.markAsRead(event.threadID);
+
       }
     });
   });
