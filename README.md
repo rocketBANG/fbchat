@@ -12,7 +12,7 @@ You can check out the library used [here](https://github.com/Schmavery/facebook-
 * View threads
 * Send code as message
 
-![Chat image](file://media/readme/chat-image.png)
+![Chat image](./media/readme/chat-image.png)
 
 ## Requirements
 
