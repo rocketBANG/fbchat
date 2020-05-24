@@ -1,73 +1,131 @@
 {
-	"name": "fbchat",
-	"displayName": "fbchat",
-	"description": "Chat on facebook",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.45.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onCommand:fbchat.openChat"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "fbchat.openChat",
-				"title": "FBChat: Open thread"
-			},
-			{
-                "command": "fbchat.reply",
-                "title": "FBChat: Reply",
-                "enablement": "resourceScheme == fbchat"
-            },
-            {
-                "command": "fbchat.logout",
-                "title": "FBChat Logout",
-                "enablement": "resourceScheme == fbchat"
-			}
-        ],
-        "menus": {
-            "editor/title": [
-              {
-                "command": "fbchat.reply",
-                "group": "navigation",
-                "when": "resourceScheme == fbchat"
-              }
-            ],
-            "commandPalette": [
-                {
-                    "command": "fbchat.reply",
-                    "when": "resourceScheme == fbchat"
-                }
-            ]
+  "name": "fbchat",
+  "displayName": "fbchat",
+  "description": "Chat on facebook",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.45.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:fbchat.openChat",
+    "onCommand:fbchat.login",
+    "onCommand:fbchat.sendTextAsMessage",
+    "onView:fbchats"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "fbchat.openChat",
+        "title": "FBChat: Open thread"
+      },
+      {
+        "command": "fbchat.reply",
+        "title": "FBChat: Reply",
+        "enablement": "resourceScheme == fbchat"
+      },
+      {
+        "command": "fbchat.logout",
+        "title": "FBChat Logout"
+      },
+      {
+        "command": "fbchat.login",
+        "title": "FBChat Login"
+      },
+      {
+        "command": "fbchat.mute",
+        "title": "FBChat Mute notifications"
+      },
+      {
+        "command": "fbchat.unmute",
+        "title": "FBChat Unmute notifications"
+      },
+      {
+        "command": "fbchat.sendTextAsMessage",
+        "title": "FBChat Send text as message"
+      }
+    ],
+    "views": {
+      "fb-chat": [
+        {
+          "id": "fbchats",
+          "name": "Chats"
         }
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"lint": "eslint src --ext ts",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/mocha": "^7.0.2",
-		"@types/node": "^13.11.0",
-		"@types/vscode": "^1.45.0",
-		"@typescript-eslint/eslint-plugin": "^2.30.0",
-		"@typescript-eslint/parser": "^2.30.0",
-		"eslint": "^6.8.0",
-		"glob": "^7.1.6",
-		"mocha": "^7.1.2",
-		"typescript": "^3.8.3",
-		"vscode-test": "^1.3.0"
-	},
-	"dependencies": {
-		"facebook-chat-api": "^1.8.0"
-	}
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "fbchats",
+        "contents": "You are not currently logged in to an account\n[Login](command:fbchat.login)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "fb-chat",
+          "title": "FB Chat",
+          "icon": "media/comments-regular.svg"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "fbchat.reply",
+          "group": "navigation",
+          "when": "resourceScheme == fbchat"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "fbchat.sendTextAsMessage",
+          "group": "fbchat@1",
+          "when": "editorHasSelection"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "fbchat.reply",
+          "when": "resourceScheme == fbchat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "FB Chat",
+      "properties": {
+        "fbchat.showNotifications": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show incomming message notifications"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint src --ext ts",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.11.0",
+    "@types/vscode": "^1.45.0",
+    "@typescript-eslint/eslint-plugin": "^2.30.0",
+    "@typescript-eslint/parser": "^2.30.0",
+    "eslint": "^6.8.0",
+    "glob": "^7.1.6",
+    "mocha": "^7.1.2",
+    "typescript": "^3.8.3",
+    "vscode-test": "^1.3.0"
+  },
+  "dependencies": {
+    "facebook-chat-api": "^1.8.0"
+  }
 }

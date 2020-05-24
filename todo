@@ -1,11 +1,22 @@
 X 1 Chat page per person
 X logout
 X Replying support
-Group support ?idk
+X Sidebar
+X login state different from activated state
+X send code snippet in mesage
+notification support
+change mark as read to only mark when it is actually read
+read receipt support
+clean up extension.ts
+number of unreads
 Image support
-Sidebar
+Typing support
 reload extension command
-notification support (save indicator?)
+Error messages
+Reaction support
+Language support (styling)
+Reply to message support
+Delete support
+Group support ?idk
 X manual enter password
 X 2fa
-allow multiple sources (e.g. slack)

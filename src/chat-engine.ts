@@ -45,7 +45,50 @@ export class ChatEngine {
 
   private listeners: ChatListener[] = [];
 
-  private loginUser = (callback) => {
+  setupLogin = () => new Promise(async resolve => {
+    const email = await vscode.window.showInputBox({
+      prompt: "Enter email"
+    });
+
+    if (!email) {
+      return;
+    }
+
+    const password = await vscode.window.showInputBox({
+      prompt: "Enter password",
+      password: true
+    });
+
+    if (!password) {
+      return;
+    }
+
+    login({ email, password }, async (err, api) => {
+      if (err) {
+        switch (err.error) {
+          case 'login-approval':
+            const fa2Code = await vscode.window.showInputBox({
+              prompt: "Enter 2fa code"
+            });
+            if (fa2Code) {
+              err.continue(fa2Code);
+            }
+            break;
+          default:
+            vscode.window.showErrorMessage("Incorrect username or password");
+        }
+        return;
+      }
+
+
+      this.state.update(settingsKey, api.getAppState());
+
+      await this.setupApiListening(api);
+      resolve(api);
+    });
+  });
+
+  private activateApi = (callback) => {
     let savedCreds;
     try {
       savedCreds = this.state.get("fbchatAppState");
@@ -60,66 +103,29 @@ export class ChatEngine {
         return;
       }
 
-      const email = await vscode.window.showInputBox({
-        prompt: "Enter email"
-      });
-
-      if (!email) {
-        return;
-      }
-
-      const password = await vscode.window.showInputBox({
-        prompt: "Enter password",
-        password: true
-      });
-
-      if (!password) {
-        return;
-      }
-
-      login({ email, password }, async (err, api) => {
-        if (err) {
-          switch (err.error) {
-            case 'login-approval':
-              const fa2Code = await vscode.window.showInputBox({
-                prompt: "Enter 2fa code"
-              });
-              if (fa2Code) {
-                err.continue(fa2Code);
-              }
-              break;
-            default:
-              console.error(err);
-          }
-          return;
-        }
-
-
-        this.state.update(settingsKey, api.getAppState());
-
-        callback(api);
-      });
+      return callback(null);
     });
 
   };
 
   isActive = () => this.api !== undefined;
+  isSavedLogin = () => !!this.state.get(settingsKey);
 
   logout = () => new Promise((resolve, reject) => {
-    this.api.logout((err) => {
-      if (err) {
-        reject(err);
-      }
-      this.state.update(settingsKey, undefined);
-      this.api = undefined;
-      if (this.messageRecievedListener) {
-        this.messageRecievedListener();
-      }
+    if (this.api) {
+      this.api.logout((err) => {
+      });
+    }
 
-      this.listeners.forEach(l => l.resetListener());
+    this.state.update(settingsKey, undefined);
+    this.api = undefined;
+    if (this.messageRecievedListener) {
+      this.messageRecievedListener();
+    }
 
-      resolve();
-    });
+    this.listeners.forEach(l => l.resetListener());
+
+    resolve();
   });
 
   isCurrentuser = (userID: string) => this.api.getCurrentUserID() === userID;
@@ -187,43 +193,49 @@ export class ChatEngine {
     return (await this.getUserInfo(userID)).name;
   };
 
+  private setupApiListening = (api) => new Promise(resolve => {
+    this.listeners.forEach(l => l.resetListener());
+
+    api.setOptions({
+      logLevel: "silent"
+    });
+
+    this.api = api;
+    resolve();
+
+    api.setOptions({ listenEvents: true });
+
+    this.messageRecievedListener = api.listenMqtt(async (err, event) => {
+      if (err) {
+        return console.error(err);
+      }
+
+      api.markAsRead(event.threadID, (err) => {
+        if (err) { console.error(err); }
+      });
+
+      switch (event.type) {
+        case "message":
+          const senderInfo = await this.getUserInfo(event.senderID);
+
+          this.listeners.forEach(l => l.messageListener({
+            body: event.body,
+            senderName: senderInfo.name,
+            threadID: event.threadID,
+            senderID: event.senderID
+          }));
+          break;
+        case "event":
+          console.log("event", event);
+          break;
+      }
+    });
+  });
+
   start = () => new Promise(resolve => {
-    this.loginUser((api) => {
-      api.setOptions({
-        logLevel: "silent"
-      });
-
-      this.api = api;
-      resolve();
-
-      // console.log("started")
-      api.setOptions({ listenEvents: true });
-
-      this.messageRecievedListener = api.listenMqtt(async (err, event) => {
-        if (err) {
-          return console.error(err);
-        }
-
-        api.markAsRead(event.threadID, (err) => {
-          if (err) { console.error(err); }
-        });
-
-        switch (event.type) {
-          case "message":
-            const senderInfo = await this.getUserInfo(event.senderID);
-
-            this.listeners.forEach(l => l.messageListener({
-              body: event.body,
-              senderName: senderInfo.name,
-              threadID: event.threadID,
-              senderID: event.senderID
-            }));
-            break;
-          case "event":
-            console.log("event", event);
-            break;
-        }
-      });
+    this.activateApi(async (api) => {
+      await this.setupApiListening(api);
+      return resolve();
     });
   });
 
