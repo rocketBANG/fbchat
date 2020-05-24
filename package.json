@@ -25,7 +25,8 @@
       {
         "command": "fbchat.reply",
         "title": "FBChat: Reply",
-        "enablement": "resourceScheme == fbchat"
+        "enablement": "resourceScheme == fbchat",
+        "icon": "$(comment)"
       },
       {
         "command": "fbchat.logout",
@@ -49,7 +50,8 @@
       },
       {
         "command": "fbchat.refreshThread",
-        "title": "Refresh Thread"
+        "title": "Refresh Thread",
+        "icon": "$(refresh)"
       },
       {
         "command": "fbchat.sendTextAsMessage",
@@ -75,7 +77,7 @@
         {
           "id": "fb-chat",
           "title": "FB Chat",
-          "icon": "media/comments-regular.svg"
+          "icon": "media/chat-icon.svg"
         }
       ]
     },

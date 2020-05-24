@@ -51,6 +51,8 @@ class ChatThreadItem extends vscode.TreeItem {
     super(label, collapsibleState);
   }
 
+  iconPath = new vscode.ThemeIcon("account");
+
   command: vscode.Command = {
     command: 'fbchat.openThread',
     title: 'Open',
