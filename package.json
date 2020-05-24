@@ -2,7 +2,7 @@
   "name": "fbchat",
   "displayName": "fbchat",
   "description": "Chat on facebook",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.45.0"
   },
@@ -131,6 +131,13 @@
     "pretest": "npm run compile && npm run lint",
     "test": "node ./out/test/runTest.js"
   },
+  "author": {
+    "name": "Reuben Rakete"
+  },
+  "repository": {
+    "url": "https://github.com/rocketBANG/fbchat"
+  },
+  "publisher": "rocketbang",
   "devDependencies": {
     "@types/glob": "^7.1.1",
     "@types/mocha": "^7.0.2",
